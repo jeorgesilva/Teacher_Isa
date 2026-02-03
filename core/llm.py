@@ -5,7 +5,7 @@ Handles HuggingFace Inference API integration with pedagogical prompts.
 
 import logging
 import streamlit as st
-from langchain_community.llms import HuggingFaceEndpoint
+from huggingface_hub import InferenceClient
 from langchain.schema import HumanMessage, AIMessage
 from typing import List, Optional
 
@@ -49,10 +49,10 @@ Remember: Your goal is to build the student's confidence and competence simultan
 
 def get_huggingface_llm():
     """
-    Initialize and return HuggingFace LLM endpoint.
+    Initialize and return HuggingFace InferenceClient.
     
     Returns:
-        HuggingFaceEndpoint: Configured LLM instance
+        InferenceClient: Configured inference client instance
         
     Raises:
         StreamlitException: If API token not found in st.secrets
@@ -64,18 +64,15 @@ def get_huggingface_llm():
             st.info("💡 Add your token to `.streamlit/secrets.toml`")
             st.stop()
         
-        logger.info("Initializing HuggingFace LLM endpoint")
-        llm = HuggingFaceEndpoint(
-            repo_id="mistralai/Mistral-7B-Instruct-v0.2",
-            huggingfacehub_api_token=api_token,
-            temperature=0.7,
-            top_p=0.95,
-            max_length=512
+        logger.info("Initializing HuggingFace InferenceClient")
+        client = InferenceClient(
+            model="mistralai/Mistral-7B-Instruct-v0.2",
+            token=api_token
         )
-        logger.info("✅ HuggingFace LLM initialized successfully")
-        return llm
+        logger.info("✅ HuggingFace InferenceClient initialized successfully")
+        return client
     except Exception as e:
-        logger.error(f"Failed to initialize HuggingFace LLM: {str(e)}")
+        logger.error(f"Failed to initialize HuggingFace client: {str(e)}")
         st.error(f"❌ Error initializing LLM: {str(e)}")
         st.stop()
 
@@ -113,7 +110,7 @@ def get_response_with_rag(
     Args:
         messages: List of conversation messages (HumanMessage, AIMessage)
         rag_context: Optional RAG-retrieved context to include in prompt
-        llm: LLM instance (defaults to HuggingFace if None)
+        llm: InferenceClient instance (defaults to HuggingFace if None)
         
     Returns:
         str: Generated response from the model, or None if error occurs
@@ -133,9 +130,15 @@ def get_response_with_rag(
             )
             logger.info(f"RAG context injected (length: {len(rag_context)})")
         
-        # Generate response
-        logger.info("Calling HuggingFace LLM for response generation")
-        response = llm.invoke(prompt)
+        # Generate response using InferenceClient
+        logger.info("Calling HuggingFace InferenceClient for response generation")
+        response = llm.text_generation(
+            prompt,
+            max_new_tokens=512,
+            temperature=0.7,
+            top_p=0.95,
+            return_full_text=False
+        )
         
         # Clean up response
         response = response.strip()
