@@ -1,12 +1,11 @@
 """
 LLM module for Teacher Isa AI.
-Handles HuggingFace Inference API integration with pedagogical prompts.
+Handles HuggingFace Router API integration with OpenAI SDK and pedagogical prompts.
 """
 
 import logging
 import streamlit as st
-import requests
-from langchain.schema import HumanMessage, AIMessage
+from openai import OpenAI
 from typing import List, Optional
 
 logging.basicConfig(level=logging.INFO)
@@ -49,10 +48,10 @@ Remember: Your goal is to build the student's confidence and competence simultan
 
 def get_huggingface_llm():
     """
-    Get HuggingFace API token from secrets.
+    Get OpenAI client configured for HuggingFace Router.
     
     Returns:
-        str: API token
+        OpenAI: Configured OpenAI client
         
     Raises:
         StreamlitException: If API token not found in st.secrets
@@ -64,11 +63,17 @@ def get_huggingface_llm():
             st.info("💡 Add your token to `.streamlit/secrets.toml`")
             st.stop()
         
-        logger.info("✅ HuggingFace API token retrieved")
-        return api_token
+        # Create and return OpenAI client with HuggingFace Router
+        client = OpenAI(
+            base_url="https://router.huggingface.co/v1",
+            api_key=api_token,
+        )
+        
+        logger.info("✅ HuggingFace OpenAI client initialized")
+        return client
     except Exception as e:
-        logger.error(f"Failed to get HuggingFace token: {str(e)}")
-        st.error(f"❌ Error getting API token: {str(e)}")
+        logger.error(f"Failed to get HuggingFace client: {str(e)}")
+        st.error(f"❌ Error getting API client: {str(e)}")
         st.stop()
 
 
@@ -100,12 +105,12 @@ def get_response_with_rag(
     llm = None
 ) -> Optional[str]:
     """
-    Generate response using LLM, optionally enriched with RAG context.
+    Generate response using LLM (via OpenAI SDK with HuggingFace Router), optionally enriched with RAG context.
     
     Args:
         messages: List of conversation messages (HumanMessage, AIMessage)
         rag_context: Optional RAG-retrieved context to include in prompt
-        llm: API token string (defaults to getting from secrets if None)
+        llm: OpenAI client (defaults to creating new client if None)
         
     Returns:
         str: Generated response from the model, or None if error occurs
@@ -114,69 +119,55 @@ def get_response_with_rag(
         if llm is None:
             llm = get_huggingface_llm()
         
-        # Format messages
-        prompt = format_messages_for_llm(messages)
+        # Format messages for OpenAI API
+        formatted_messages = []
         
-        # Inject RAG context if available
+        # Add system prompt
+        formatted_messages.append({
+            "role": "system",
+            "content": TEACHER_ISA_SYSTEM_PROMPT
+        })
+        
+        # Add context if RAG found documents
         if rag_context:
-            prompt = prompt.replace(
-                "Teacher Isa:",
-                f"[Reference Material]\n{rag_context}\n\n[Response]\nTeacher Isa:"
-            )
-            logger.info(f"RAG context injected (length: {len(rag_context)})")
+            formatted_messages.append({
+                "role": "system",
+                "content": f"[Reference Material from Knowledge Base]\n{rag_context}"
+            })
         
-        # Generate response using HuggingFace Router API
-        logger.info("Calling HuggingFace Router API for response generation")
+        # Add conversation history
+        for msg in messages:
+            if hasattr(msg, 'content'):
+                # Handle both HumanMessage/AIMessage and dict formats
+                content = msg.content if isinstance(msg.content, str) else str(msg.content)
+                
+                if hasattr(msg, '__class__'):
+                    class_name = msg.__class__.__name__
+                    if 'HumanMessage' in class_name:
+                        formatted_messages.append({"role": "user", "content": content})
+                    elif 'AIMessage' in class_name:
+                        formatted_messages.append({"role": "assistant", "content": content})
         
-        API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
-        headers = {
-            "Authorization": f"Bearer {llm}",
-            "Content-Type": "application/json"
-        }
+        # Call OpenAI API via HuggingFace Router
+        logger.info("Calling OpenAI API via HuggingFace Router")
         
-        payload = {
-            "inputs": prompt,
-            "parameters": {
-                "max_new_tokens": 512,
-                "temperature": 0.7,
-                "top_p": 0.95,
-                "return_full_text": False
-            }
-        }
+        response = llm.chat.completions.create(
+            model="meta-llama/Llama-3.1-8B-Instruct:novita",
+            messages=formatted_messages,
+            max_tokens=512,
+            temperature=0.7,
+            top_p=0.95,
+        )
         
-        response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
-        
-        result = response.json()
-        
-        # Extract generated text
-        if isinstance(result, list) and len(result) > 0:
-            generated_text = result[0].get("generated_text", "")
-        elif isinstance(result, dict):
-            generated_text = result.get("generated_text", "")
-        else:
-            generated_text = str(result)
-        
-        # Clean up response
-        generated_text = generated_text.strip()
-        if generated_text.startswith("Teacher Isa:"):
-            generated_text = generated_text.replace("Teacher Isa:", "").strip()
+        # Extract response
+        generated_text = response.choices[0].message.content.strip()
         
         logger.info(f"✅ Response generated (length: {len(generated_text)})")
         return generated_text
     
-    except requests.exceptions.HTTPError as e:
-        error_msg = f"HTTP Error: {e}"
-        if e.response is not None:
-            try:
-                error_detail = e.response.json()
-                error_msg = f"HTTP {e.response.status_code}: {error_detail}"
-            except:
-                error_msg = f"HTTP {e.response.status_code}: {e.response.text[:200]}"
+    except Exception as e:
+        error_msg = str(e)
         logger.error(f"Error generating response: {error_msg}")
         return f"Erro ao gerar resposta: {error_msg}"
-    
-    except Exception as e:
-        logger.error(f"Error generating response: {str(e)}")
-        return f"Erro inesperado: {str(e)}"
+
 
