@@ -5,7 +5,7 @@ Handles HuggingFace Inference API integration with pedagogical prompts.
 
 import logging
 import streamlit as st
-from huggingface_hub import InferenceClient
+import requests
 from langchain.schema import HumanMessage, AIMessage
 from typing import List, Optional
 
@@ -49,10 +49,10 @@ Remember: Your goal is to build the student's confidence and competence simultan
 
 def get_huggingface_llm():
     """
-    Initialize and return HuggingFace InferenceClient.
+    Get HuggingFace API token from secrets.
     
     Returns:
-        InferenceClient: Configured inference client instance
+        str: API token
         
     Raises:
         StreamlitException: If API token not found in st.secrets
@@ -64,17 +64,11 @@ def get_huggingface_llm():
             st.info("💡 Add your token to `.streamlit/secrets.toml`")
             st.stop()
         
-        logger.info("Initializing HuggingFace InferenceClient")
-        client = InferenceClient(
-            model="mistralai/Mistral-7B-Instruct-v0.2",
-            token=api_token,
-            base_url="https://router.huggingface.co"
-        )
-        logger.info("✅ HuggingFace InferenceClient initialized successfully")
-        return client
+        logger.info("✅ HuggingFace API token retrieved")
+        return api_token
     except Exception as e:
-        logger.error(f"Failed to initialize HuggingFace client: {str(e)}")
-        st.error(f"❌ Error initializing LLM: {str(e)}")
+        logger.error(f"Failed to get HuggingFace token: {str(e)}")
+        st.error(f"❌ Error getting API token: {str(e)}")
         st.stop()
 
 
@@ -111,7 +105,7 @@ def get_response_with_rag(
     Args:
         messages: List of conversation messages (HumanMessage, AIMessage)
         rag_context: Optional RAG-retrieved context to include in prompt
-        llm: InferenceClient instance (defaults to HuggingFace if None)
+        llm: API token string (defaults to getting from secrets if None)
         
     Returns:
         str: Generated response from the model, or None if error occurs
@@ -131,24 +125,58 @@ def get_response_with_rag(
             )
             logger.info(f"RAG context injected (length: {len(rag_context)})")
         
-        # Generate response using InferenceClient
-        logger.info("Calling HuggingFace InferenceClient for response generation")
-        response = llm.text_generation(
-            prompt,
-            max_new_tokens=512,
-            temperature=0.7,
-            top_p=0.95,
-            return_full_text=False
-        )
+        # Generate response using HuggingFace Router API
+        logger.info("Calling HuggingFace Router API for response generation")
+        
+        API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+        headers = {
+            "Authorization": f"Bearer {llm}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "inputs": prompt,
+            "parameters": {
+                "max_new_tokens": 512,
+                "temperature": 0.7,
+                "top_p": 0.95,
+                "return_full_text": False
+            }
+        }
+        
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
+        response.raise_for_status()
+        
+        result = response.json()
+        
+        # Extract generated text
+        if isinstance(result, list) and len(result) > 0:
+            generated_text = result[0].get("generated_text", "")
+        elif isinstance(result, dict):
+            generated_text = result.get("generated_text", "")
+        else:
+            generated_text = str(result)
         
         # Clean up response
-        response = response.strip()
-        if response.startswith("Teacher Isa:"):
-            response = response.replace("Teacher Isa:", "").strip()
+        generated_text = generated_text.strip()
+        if generated_text.startswith("Teacher Isa:"):
+            generated_text = generated_text.replace("Teacher Isa:", "").strip()
         
-        logger.info(f"✅ Response generated (length: {len(response)})")
-        return response
+        logger.info(f"✅ Response generated (length: {len(generated_text)})")
+        return generated_text
+    
+    except requests.exceptions.HTTPError as e:
+        error_msg = f"HTTP Error: {e}"
+        if e.response is not None:
+            try:
+                error_detail = e.response.json()
+                error_msg = f"HTTP {e.response.status_code}: {error_detail}"
+            except:
+                error_msg = f"HTTP {e.response.status_code}: {e.response.text[:200]}"
+        logger.error(f"Error generating response: {error_msg}")
+        return f"Erro ao gerar resposta: {error_msg}"
     
     except Exception as e:
         logger.error(f"Error generating response: {str(e)}")
-        return f"I encountered an error generating a response: {str(e)}. Please try again."
+        return f"Erro inesperado: {str(e)}"
+
