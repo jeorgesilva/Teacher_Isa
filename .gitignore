@@ -172,13 +172,18 @@ token.txt
 apikey.txt
 *.pickle
 video_cache/
-data/
 
 # Google credentials
 *credentials*.json
 *client_secret*.json
 oauth_credentials.json
 google_config*.json
+
+# Streamlit secrets (HuggingFace API token)
+.streamlit/secrets.toml
+
+# ChromaDB vector database (local knowledge base)
+data/knowledge_base/
 
 # Log files
 *.log

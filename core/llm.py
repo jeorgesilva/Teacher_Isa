@@ -68,11 +68,9 @@ def get_huggingface_llm():
         llm = HuggingFaceEndpoint(
             repo_id="mistralai/Mistral-7B-Instruct-v0.2",
             huggingfacehub_api_token=api_token,
-            model_kwargs={
-                "max_length": 512,
-                "temperature": 0.7,
-                "top_p": 0.95,
-            }
+            temperature=0.7,
+            top_p=0.95,
+            max_length=512
         )
         logger.info("✅ HuggingFace LLM initialized successfully")
         return llm

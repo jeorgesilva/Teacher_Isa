@@ -192,9 +192,3 @@ if user_input and (submit_button or user_input):
 # Footer
 st.divider()
 st.caption("Teacher Isa AI © 2025 | Powered by HuggingFace Inference API & ChromaDB")
-    st.experimental_rerun()
-
-# Função para RAG
-
-def get_grammar_reference(query):
-    return ""  # TODO: Implementar FAISS/ChromaDB para busca em PDFs de gramática
