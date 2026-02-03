@@ -67,7 +67,8 @@ def get_huggingface_llm():
         logger.info("Initializing HuggingFace InferenceClient")
         client = InferenceClient(
             model="mistralai/Mistral-7B-Instruct-v0.2",
-            token=api_token
+            token=api_token,
+            base_url="https://router.huggingface.co"
         )
         logger.info("✅ HuggingFace InferenceClient initialized successfully")
         return client

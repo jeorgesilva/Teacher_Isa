@@ -79,6 +79,12 @@ if "nivel" not in st.session_state:
 if "keywords" not in st.session_state:
     st.session_state.keywords = []
 
+if "processing" not in st.session_state:
+    st.session_state.processing = False
+
+if "last_user_input" not in st.session_state:
+    st.session_state.last_user_input = ""
+
 
 # =========================
 # SIDEBAR
@@ -175,13 +181,15 @@ with col_chat:
             )
 
     # Entrada do usuário
-    user_input = st.text_input(
-        "Digite sua pergunta ou dúvida:",
-        placeholder="Pergunte sobre gramática, vocabulário, conversação...",
-        key="user_input"
+    user_input = st.chat_input(
+        "Digite sua pergunta ou dúvida:"
     )
 
-    if user_input:
+    if user_input and not st.session_state.processing:
+        # Previne múltiplos processamentos
+        st.session_state.processing = True
+        st.session_state.last_user_input = user_input
+        
         # Adiciona mensagem do usuário
         st.session_state.messages.append(HumanMessage(content=user_input))
         logger.info(f"User input: {user_input[:50]}...")
@@ -219,13 +227,17 @@ with col_chat:
                     # Add AI response to history
                     st.session_state.messages.append(AIMessage(content=response))
                     logger.info(f"Response generated: {response[:50]}...")
-                    st.rerun()
                 else:
                     st.error("❌ Falha ao gerar resposta. Tente novamente.")
             
             except Exception as e:
                 logger.error(f"Error in chat processing: {str(e)}")
                 st.error(f"❌ Erro: {str(e)}")
+            
+            finally:
+                # Libera o processamento para próxima mensagem
+                st.session_state.processing = False
+                st.rerun()
 
 # =========================
 # COLUNA DE FERRAMENTAS
@@ -245,10 +257,11 @@ with col_tools:
         st.info("🎯 **Quiz:** (funcionalidade em desenvolvimento)")
 
     if st.button("💡 Explicar com exemplos", use_container_width=True):
-        if user_input:
+        if st.session_state.last_user_input:
             st.session_state.messages.append(HumanMessage(
-                content=f"Me dê 3 exemplos práticos sobre: {user_input}"
+                content=f"Me dê 3 exemplos práticos sobre: {st.session_state.last_user_input}"
             ))
+            st.session_state.processing = False  # Permite processar nova mensagem
             st.rerun()
         else:
             st.warning("Digite uma pergunta primeiro!")
@@ -264,6 +277,7 @@ with col_tools:
                 st.session_state.messages.append(HumanMessage(
                     content=f"Crie uma analogia simples para explicar: {last_user_msg}"
                 ))
+                st.session_state.processing = False  # Permite processar nova mensagem
                 st.rerun()
         else:
             st.warning("Inicie uma conversa primeiro!")
