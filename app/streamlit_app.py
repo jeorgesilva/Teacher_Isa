@@ -15,42 +15,54 @@ from core.rag import rag_system
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Page configuration
+# =========================
+# CONFIGURAÇÃO DA PÁGINA
+# =========================
 st.set_page_config(
-    page_title="Teacher Isa AI",
-    page_icon="👩‍🏫",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="Teacher Isa",
+    page_icon="📚",
+    layout="wide"
 )
 
-# Custom CSS
+# =========================
+# ESTILO PERSONALIZADO
+# =========================
 st.markdown("""
 <style>
-    .student-message {
-        background-color: #e3f2fd;
-        padding: 12px 16px;
-        border-radius: 12px;
-        margin: 8px 0;
-        border-left: 4px solid #2196f3;
-    }
-    .teacher-message {
-        background-color: #f3e5f5;
-        padding: 12px 16px;
-        border-radius: 12px;
-        margin: 8px 0;
-        border-left: 4px solid #9c27b0;
-    }
-    .rag-log-item {
-        background-color: #f5f5f5;
-        padding: 8px 12px;
-        border-radius: 6px;
-        margin: 4px 0;
-        font-size: 0.85em;
-    }
+.chat-bubble-user {
+    background-color: #DCF8C6;
+    padding: 10px 15px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    width: fit-content;
+}
+.chat-bubble-isa {
+    background-color: #E8EAF6;
+    padding: 10px 15px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    width: fit-content;
+}
+.quick-action-btn {
+    background-color: #f0f0f0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 4px 0;
+    cursor: pointer;
+}
+.info-panel {
+    background-color: #f9f9f9;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 8px 0;
+    border-left: 3px solid #4CAF50;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state
+# =========================
+# ESTADO DA SESSÃO
+# =========================
 if "messages" not in st.session_state:
     st.session_state.messages = []
     logger.info("Initialized new chat session")
@@ -61,134 +73,227 @@ if "rag_logs" not in st.session_state:
 if "llm" not in st.session_state:
     st.session_state.llm = None
 
-# Sidebar configuration
+if "nivel" not in st.session_state:
+    st.session_state.nivel = "Intermediário"
+
+if "keywords" not in st.session_state:
+    st.session_state.keywords = []
+
+
+# =========================
+# SIDEBAR
+# =========================
 with st.sidebar:
-    st.header("⚙️ Settings")
-    
-    # Temperature slider
+    st.title("📚 Teacher Isa")
+    st.subheader("Configurações de Aprendizagem")
+
+    nivel = st.selectbox(
+        "Nível de explicação",
+        ["Básico", "Intermediário", "Avançado", "Prática"],
+        index=["Básico", "Intermediário", "Avançado", "Prática"].index(st.session_state.nivel)
+    )
+    st.session_state.nivel = nivel
+
     temperature = st.slider(
-        "Response Temperature (0=deterministic, 1=creative)",
+        "Criatividade da resposta",
         min_value=0.0,
         max_value=1.0,
         value=0.7,
         step=0.1,
-        help="Lower = more focused, Higher = more creative"
+        help="Menor = mais focado, Maior = mais criativo"
+    )
+
+    st.markdown("---")
+    st.subheader("Material de Apoio")
+    uploaded_files = st.file_uploader(
+        "Envie PDFs, imagens ou textos",
+        type=["pdf", "png", "jpg", "jpeg", "txt"],
+        accept_multiple_files=True
     )
     
-    # Daily English Fact
-    st.subheader("📚 Daily English Fact")
-    facts = [
-        "The word 'set' has over 430 definitions in English!",
-        "English has no official national body to regulate it.",
-        "'Dreamt' is the only English word that ends in 'mt'.",
-        "The letter 'E' is the most commonly used letter in English.",
-        "'Uncopyrightable' is the longest English word with no repeated letters.",
-        "The word 'queue' is pronounced the same as its first letter 'Q'.",
-        "'Almost' is the longest English word with all letters in alphabetical order.",
-    ]
-    import random
-    st.info(f"💡 {random.choice(facts)}")
+    if uploaded_files:
+        st.success(f"✅ {len(uploaded_files)} arquivo(s) carregado(s)")
+
+    st.markdown("---")
     
     # RAG Logs
-    st.subheader("🔍 RAG Search Logs")
+    st.subheader("🔍 Buscas RAG")
     if st.session_state.rag_logs:
-        with st.expander(f"View {len(st.session_state.rag_logs)} searches"):
+        with st.expander(f"Ver {len(st.session_state.rag_logs)} buscas"):
             for i, log in enumerate(reversed(st.session_state.rag_logs[-10:]), 1):
-                status = "✅ Found docs" if log.get("docs_found") else "❌ No docs"
-                st.markdown(
-                    f'<div class="rag-log-item">{i}. "{log.get("query", "")[:50]}..." {status}</div>',
-                    unsafe_allow_html=True
-                )
+                status = "✅ Docs" if log.get("docs_found") else "❌ Vazio"
+                st.caption(f'{i}. "{log.get("query", "")[:30]}..." {status}')
     else:
-        st.caption("No searches yet")
+        st.caption("Nenhuma busca ainda")
+    
+    st.markdown("---")
     
     # System Status
-    st.subheader("🔧 System Status")
+    st.subheader("🔧 Status do Sistema")
     try:
         llm = get_huggingface_llm()
-        st.success("✅ LLM Connected")
+        st.success("✅ LLM Conectado")
     except Exception as e:
-        st.error(f"❌ LLM Error: {str(e)[:50]}")
+        st.error(f"❌ Erro LLM: {str(e)[:30]}")
     
     if rag_system:
-        st.success("✅ RAG System Ready")
+        st.success("✅ RAG Pronto")
     else:
-        st.warning("⚠️ RAG System Not Available")
+        st.warning("⚠️ RAG Indisponível")
+    
+    st.markdown("---")
+    st.caption("Versão 2.0 • HuggingFace + ChromaDB")
 
-# Main chat interface
-st.title("👩‍🏫 Teacher Isa AI")
-st.caption("Your personalized English learning assistant powered by AI")
+# =========================
+# TÍTULO PRINCIPAL
+# =========================
+st.title("👩‍🏫 Teacher Isa — Seu professor digital")
+st.write("Aprenda qualquer assunto com explicações claras, exemplos e exercícios gerados automaticamente.")
 
-# Chat display container
-chat_container = st.container()
-with chat_container:
-    for message in st.session_state.messages:
-        if isinstance(message, HumanMessage):
+# =========================
+# ÁREA PRINCIPAL EM DUAS COLUNAS
+# =========================
+col_chat, col_tools = st.columns([2, 1])
+
+# =========================
+# COLUNA DO CHAT
+# =========================
+with col_chat:
+    st.subheader("💬 Conversa")
+
+    # Mostrar histórico
+    for msg in st.session_state.messages:
+        if isinstance(msg, HumanMessage):
             st.markdown(
-                f'<div class="student-message"><b>You:</b> {message.content}</div>',
+                f"<div class='chat-bubble-user'><b>Você:</b> {msg.content}</div>",
                 unsafe_allow_html=True
             )
-        elif isinstance(message, AIMessage):
+        elif isinstance(msg, AIMessage):
             st.markdown(
-                f'<div class="teacher-message"><b>Teacher Isa:</b> {message.content}</div>',
+                f"<div class='chat-bubble-isa'><b>Teacher Isa:</b> {msg.content}</div>",
                 unsafe_allow_html=True
             )
 
-# Input section
-st.divider()
-col1, col2 = st.columns([4, 1])
-
-with col1:
+    # Entrada do usuário
     user_input = st.text_input(
-        "Your message:",
-        placeholder="Ask about grammar, practice conversation, or anything about English...",
-        label_visibility="collapsed"
+        "Digite sua pergunta ou dúvida:",
+        placeholder="Pergunte sobre gramática, vocabulário, conversação...",
+        key="user_input"
     )
 
-with col2:
-    submit_button = st.button("Send 📤", use_container_width=True)
-
-# Process user input
-if user_input and (submit_button or user_input):
-    # Add user message to history
-    st.session_state.messages.append(HumanMessage(content=user_input))
-    logger.info(f"User input: {user_input[:50]}...")
-    
-    with st.spinner("🤔 Teacher Isa is thinking..."):
-        try:
-            # Perform RAG search
-            rag_context = None
-            if rag_system:
-                rag_context = rag_system.search_docs(user_input, top_k=3)
-                st.session_state.rag_logs.append({
-                    "query": user_input,
-                    "docs_found": bool(rag_context),
-                    "timestamp": datetime.now().isoformat()
-                })
-                logger.info(f"RAG context found: {bool(rag_context)}")
-            
-            # Get LLM response
-            llm = st.session_state.llm or get_huggingface_llm()
-            st.session_state.llm = llm
-            
-            response = get_response_with_rag(
-                st.session_state.messages,
-                rag_context=rag_context,
-                llm=llm
-            )
-            
-            if response:
-                # Add AI response to history
-                st.session_state.messages.append(AIMessage(content=response))
-                logger.info(f"Response generated: {response[:50]}...")
-                st.rerun()
-            else:
-                st.error("❌ Failed to generate response. Please try again.")
+    if user_input:
+        # Adiciona mensagem do usuário
+        st.session_state.messages.append(HumanMessage(content=user_input))
+        logger.info(f"User input: {user_input[:50]}...")
         
-        except Exception as e:
-            logger.error(f"Error in chat processing: {str(e)}")
-            st.error(f"❌ An error occurred: {str(e)}")
+        with st.spinner("🤔 Teacher Isa está pensando..."):
+            try:
+                # Perform RAG search
+                rag_context = None
+                if rag_system:
+                    rag_context = rag_system.search_docs(user_input, top_k=3)
+                    st.session_state.rag_logs.append({
+                        "query": user_input,
+                        "docs_found": bool(rag_context),
+                        "timestamp": datetime.now().isoformat()
+                    })
+                    logger.info(f"RAG context found: {bool(rag_context)}")
+                
+                # Get LLM response
+                llm = st.session_state.llm or get_huggingface_llm()
+                st.session_state.llm = llm
+                
+                # Add nivel to context
+                context_prompt = f"Nível do aluno: {st.session_state.nivel}. "
+                full_messages = st.session_state.messages.copy()
+                if full_messages and isinstance(full_messages[0], HumanMessage):
+                    full_messages[0] = HumanMessage(content=context_prompt + full_messages[0].content)
+                
+                response = get_response_with_rag(
+                    full_messages,
+                    rag_context=rag_context,
+                    llm=llm
+                )
+                
+                if response:
+                    # Add AI response to history
+                    st.session_state.messages.append(AIMessage(content=response))
+                    logger.info(f"Response generated: {response[:50]}...")
+                    st.rerun()
+                else:
+                    st.error("❌ Falha ao gerar resposta. Tente novamente.")
+            
+            except Exception as e:
+                logger.error(f"Error in chat processing: {str(e)}")
+                st.error(f"❌ Erro: {str(e)}")
 
-# Footer
+# =========================
+# COLUNA DE FERRAMENTAS
+# =========================
+with col_tools:
+    st.subheader("⚡ Ações Rápidas")
+
+    if st.button("📝 Gerar resumo", use_container_width=True):
+        if st.session_state.messages:
+            last_msg = st.session_state.messages[-1]
+            if isinstance(last_msg, AIMessage):
+                st.info("💡 **Resumo:** " + last_msg.content[:200] + "...")
+        else:
+            st.warning("Inicie uma conversa primeiro!")
+
+    if st.button("🎯 Criar quiz", use_container_width=True):
+        st.info("🎯 **Quiz:** (funcionalidade em desenvolvimento)")
+
+    if st.button("💡 Explicar com exemplos", use_container_width=True):
+        if user_input:
+            st.session_state.messages.append(HumanMessage(
+                content=f"Me dê 3 exemplos práticos sobre: {user_input}"
+            ))
+            st.rerun()
+        else:
+            st.warning("Digite uma pergunta primeiro!")
+
+    if st.button("🎨 Criar analogia", use_container_width=True):
+        if st.session_state.messages:
+            last_user_msg = None
+            for msg in reversed(st.session_state.messages):
+                if isinstance(msg, HumanMessage):
+                    last_user_msg = msg.content
+                    break
+            if last_user_msg:
+                st.session_state.messages.append(HumanMessage(
+                    content=f"Crie uma analogia simples para explicar: {last_user_msg}"
+                ))
+                st.rerun()
+        else:
+            st.warning("Inicie uma conversa primeiro!")
+
+    st.markdown("---")
+    st.subheader("🧠 Painel de Apoio")
+    
+    # Palavras-chave (extraídas do último tópico)
+    if st.session_state.messages:
+        st.markdown("**📌 Tópico atual:**")
+        for msg in reversed(st.session_state.messages):
+            if isinstance(msg, HumanMessage):
+                words = msg.content.split()[:5]
+                st.caption(" • " + " ".join(words) + "...")
+                break
+    else:
+        st.caption("• Aguardando primeira pergunta...")
+    
+    st.markdown("**📊 Estatísticas:**")
+    st.caption(f"• {len(st.session_state.messages)} mensagens trocadas")
+    st.caption(f"• {len([m for m in st.session_state.messages if isinstance(m, HumanMessage)])} perguntas feitas")
+    
+    if uploaded_files:
+        st.markdown("**📁 Arquivos carregados:**")
+        for f in uploaded_files:
+            st.caption(f"• {f.name}")
+
+# =========================
+# FOOTER
+# =========================
 st.divider()
 st.caption("Teacher Isa AI © 2025 | Powered by HuggingFace Inference API & ChromaDB")
+
