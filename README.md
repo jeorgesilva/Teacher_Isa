@@ -60,23 +60,21 @@ The system is explicitly designed around **proven pedagogical techniques**:
 ## Project Structure
 
 ```
-lucia-bot/
-├── app/
-│   ├── __init__.py
-│   └── streamlit_app.py        # Main Streamlit UI
-├── core/
-│   ├── __init__.py
-│   ├── llm.py                  # HuggingFace LLM integration
-│   └── rag.py                  # RAG system with ChromaDB
-├── data/
-│   └── knowledge_base/         # Grammar reference PDFs (Phase 2)
-├── tests/
-│   └── __init__.py
-├── requirements.txt            # Dependencies
-├── .env.example                # Environment variables template
-├── .streamlit/
-│   └── secrets.toml            # API credentials (git-ignored)
-└── README.md                   # This file
+Teacher_Isa/
+├── .env                  # Aqui vai o seu GROQ_API_KEY
+├── requirements.txt
+├── src/
+│   ├── __init__.py       # Arquivo vazio
+│   ├── api/
+│   │   ├── __init__.py
+│   │   └── main.py       # (Novo) Servidor FastAPI
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── llm.py        # Adaptado para o Groq
+│   │   └── rag.py        # Seu código do ChromaDB
+│   └── web/
+│       ├── __init__.py
+│       └── app.py        # Seu streamlit_app.py adaptado
 ```
 
 ## Getting Started
