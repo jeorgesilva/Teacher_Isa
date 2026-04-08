@@ -9,8 +9,8 @@ from datetime import datetime
 from langchain.schema import HumanMessage, AIMessage
 
 # Import core modules
-from core.llm import get_response_with_rag, get_huggingface_llm
-from core.rag import rag_system
+from src.core.llm import get_response_with_rag, get_huggingface_llm
+from src.core.rag import rag_system
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
