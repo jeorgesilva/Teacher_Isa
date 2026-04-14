@@ -96,15 +96,19 @@ def get_chat_engine(llm: Any, embed_model: Any):
 
     memory = ChatMemoryBuffer.from_defaults(token_limit=CHAT_MEMORY_TOKEN_LIMIT)
 
+    # Mudanças aqui: forçamos o modo 'react' e adicionamos os parâmetros de debug
     chat_engine = vector_index.as_chat_engine(
+        chat_mode="react",              # Força o uso do agente ReAct
         memory=memory,
         llm=llm,
         system_prompt=LLM_SYSTEM_PROMPT,
         similarity_top_k=SIMILARITY_TOP_K,
+        verbose=True,                   # Permite ver o raciocínio no terminal
+        max_iterations=10               # Para o loop se ele tentar mais de 10 vezes
     )
+    
     logger.info("Chat engine initialised.")
     return chat_engine
-
 
 def build_index(force: bool = False) -> None:
     """

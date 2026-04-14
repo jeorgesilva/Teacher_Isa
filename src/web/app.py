@@ -181,40 +181,35 @@ user_input = st.chat_input("Type your message here...")
 
 if user_input and not st.session_state.processing:
     st.session_state.processing = True
-    st.session_state.last_user_input = user_input
     
-    # 1. Adiciona a mensagem do usuário na tela
+    # 1. Adiciona e mostra a mensagem do usuário
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
         
-    # 2. Mostra que a IA está pensando e processa a resposta
+    # 2. Processa a resposta
     with st.chat_message("assistant"):
         with st.spinner("Teacher Isa is thinking..."):
             try:
                 if chat_engine is None:
-                    st.error("Chat engine não inicializado. Verifique logs no servidor.")
+                    st.error("Chat engine não inicializado.")
                 else:
                     enriched_input = (
                         f"[Nível do aluno: {st.session_state.nivel} | "
                         f"Foco: {st.session_state.tema}]\n{user_input}"
                     )
 
-                    # Ajuste conforme a API do seu chat_engine (chat/generate/ask)
-                    # Ex.: response = chat_engine.chat(enriched_input)
-                    if hasattr(chat_engine, "chat"):
-                        response = chat_engine.chat(enriched_input)
-                    elif hasattr(chat_engine, "complete"):
-                        response = chat_engine.complete(enriched_input)
-                    else:
-                        response = str(chat_engine)  # fallback informativo
+                    # Chamada ao motor (obtendo o objeto de resposta)
+                    result = chat_engine.chat(enriched_input)
+                    
+                    # A resposta final do agente ReAct está em .response
+                    final_response = result.response
 
-                    if hasattr(chat_engine, "chat"):
-                        result = chat_engine.chat(enriched_input)
-                        response_text = result.response if hasattr(result, "response") else str(result)
-
-                    else:
-                        st.error("❌ Teacher Isa couldn't respond right now. Try again!")
+                    # EXIBE NA TELA IMEDIATAMENTE
+                    st.markdown(final_response)
+                    
+                    # SALVA NO HISTÓRICO
+                    st.session_state.messages.append({"role": "assistant", "content": final_response})
                     
             except Exception as e:
                 logger.exception("Erro ao gerar resposta: %s", e)
@@ -222,4 +217,5 @@ if user_input and not st.session_state.processing:
             
             finally:
                 st.session_state.processing = False
-                st.rerun()
+                # IMPORTANTE: Remova o st.rerun() daqui! 
+                # O Streamlit já atualiza a tela ao final do bloco de interação.
