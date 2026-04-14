@@ -127,6 +127,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.venv/
 
 # Spyder project settings
 .spyderproject
@@ -184,10 +185,10 @@ google_config*.json
 
 # ChromaDB vector database (local knowledge base)
 data/knowledge_base/
-
+local_storage/
 # Log files
 *.log
-
+*.ipynb
 # Temporary files
 temp/
 tmp/
@@ -201,3 +202,5 @@ Thumbs.db
 .Spotlight-V100
 .Trashes
 ehthumbs.db
+
+/Users/jeorgecassiodesousasilva/Documents/Teacher_Isa/Kopie_von_1_LLM.ipynb
