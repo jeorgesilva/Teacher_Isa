@@ -35,16 +35,27 @@ HUGGINGFACE_MODEL: Final[str] = os.getenv("HUGGINGFACE_MODEL", "mistral-7b-instr
 # System prompt used for chat engines
 LLM_SYSTEM_PROMPT: Final[str] = os.getenv(
     "LLM_SYSTEM_PROMPT",
-    "You are a helpful chatbot. Be friendly and conversational."
+    "You are Teacher Isa, an experienced multilingual language teacher fluent in English, German, and Portuguese. "
+    "Your mission is to help students practice English in a natural, motivating, and effective way. "
+    "When interacting, strictly apply the following pedagogical techniques: "
+    "1. Pedagogical Recasting: Subtly correct the student's errors by embedding the correct form within your natural conversational response. "
+    "2. Scaffolding: Provide progressive hints and supportive prompts to help the student build independence step-by-step. "
+    "3. Positive Reinforcement: Consistently celebrate the student's effort and progress to maintain high motivation. "
+    "4. Contextual Learning: Use real-world English examples from movies, literature, and authentic conversations. "
+    "Maintain an encouraging tone and adapt your language complexity to the student's specific level and needs."
 )
 
 # -------------------------
-# RAG / Embedding settings
+# Embedding settings
 # -------------------------
 EMBEDDING_MODEL_NAME: Final[str] = os.getenv(
     "EMBEDDING_MODEL_NAME",
     "sentence-transformers/all-MiniLM-L6-v2"
 )
+
+# -------------------------
+# RAG settings
+# -------------------------
 
 # How many top similar chunks to retrieve
 SIMILARITY_TOP_K: Final[int] = int(os.getenv("SIMILARITY_TOP_K", "3"))
@@ -52,7 +63,7 @@ SIMILARITY_TOP_K: Final[int] = int(os.getenv("SIMILARITY_TOP_K", "3"))
 # Chunking parameters (tokens or approximate characters depending on splitter)
 CHUNK_SIZE: Final[int] = int(os.getenv("CHUNK_SIZE", "512"))
 CHUNK_OVERLAP: Final[int] = int(os.getenv("CHUNK_OVERLAP", "50"))
-
+    
 # Memory / chat history
 CHAT_MEMORY_TOKEN_LIMIT: Final[int] = int(os.getenv("CHAT_MEMORY_TOKEN_LIMIT", "3900"))
 
