@@ -3,14 +3,17 @@ RAG (Retrieval-Augmented Generation) module for Teacher Isa AI.
 Manages ChromaDB vector store with Sentence-Transformers embeddings.
 """
 
+import os
 import logging
 import chromadb
 from sentence_transformers import SentenceTransformer
 from typing import List, Optional
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Define o caminho absoluto para a pasta data na raiz do projeto
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DB_PATH = os.path.join(BASE_DIR, "data", "knowledge_base")
 
 class RAGSystem:
     """
@@ -18,27 +21,17 @@ class RAGSystem:
     """
     
     def __init__(self, embedding_model: str = "all-MiniLM-L6-v2"):
-        """
-        Initialize RAG system with persistent ChromaDB storage.
-        
-        Args:
-            embedding_model: Sentence-Transformers model name for embeddings
-        """
         try:
-            logger.info(f"Initializing Sentence-Transformers with model: {embedding_model}")
             self.embedding_model = SentenceTransformer(embedding_model)
-            
-            logger.info("Initializing ChromaDB PersistentClient")
-            self.client = chromadb.PersistentClient(path="data/knowledge_base")
-            
+            # Usa o caminho absoluto
+            self.client = chromadb.PersistentClient(path=DB_PATH)
             self.collection = self.client.get_or_create_collection(
                 name="grammar_reference",
                 metadata={"hnsw:space": "cosine"}
             )
-            
-            logger.info("✅ RAG system initialized successfully")
+            logger.info("✅ RAG inicializado")
         except Exception as e:
-            logger.error(f"Failed to initialize RAG system: {str(e)}")
+            logger.error(f"Erro no RAG: {e}")
             raise
     
     def add_documents(
