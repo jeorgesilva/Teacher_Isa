@@ -1,209 +1,129 @@
-# Teacher Isa AI
+# 🎓 Teacher Isa — KI‑gestützter Sprachlernassistent
+![Python](https://img.shields.io/badge/Python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) ![Streamlit](https://img.shields.io/badge/Streamlit-FE4B4B?style=for-the-badge&logo=streamlit&logoColor=white)![LangChain](https://img.shields.io/badge/LangChain-6F42C1?style=for-the-badge&logo=langchain&logoColor=white) ![HuggingFace](https://img.shields.io/badge/HuggingFace-FF9900?style=for-the-badge&logo=huggingface&logoColor=white) ![ChromaDB](https://img.shields.io/badge/ChromaDB-2E8B57?style=for-the-badge) ![Sentence Transformers](https://img.shields.io/badge/Sentence--Transformers-007ACC?style=for-the-badge)
 
-An AI-Driven Language Learning Assistant that blends NLP and Retrieval-Augmented Generation (RAG) to provide accurate, motivating English practice powered by open-source models.
+---
 
-## Project Overview
+## Kurzbeschreibung
 
-Teacher Isa is a modern, portfolio-grade conversational tutor focused on real-world English learning. It uses:
-- **Semantic Retrieval (RAG)** to ground responses in grammar references
-- **Large Language Models** from HuggingFace for intelligent, contextual responses
-- **Pedagogical Design** principles to maximize learning outcomes
+         Teacher Isa ist ein konversationsorientierter Tutor für Englischlernen, der NLP und Retrieval‑Augmented Generation (RAG) kombiniert.  
+         System: Semantische Suche (ChromaDB) → Kontextanreicherung (RAG) → LLM‑Antwort (HuggingFace) → pädagogisch fundiertes Feedback.  
+         Ziel: realitätsnahe, motivierende Übungseinheiten mit erklärenden, kontextbezogenen Rückmeldungen.
+         
+---
 
-The system generates supportive, contextual feedback tailored to each learner's level and needs.
+## Hauptfunktionen
 
-## Linguistic Foundation
+         - RAG‑gestützte Antworten: semantische Suche in Referenzmaterialien zur Absicherung von Korrekturen.  
+         - LLM‑Integration: HuggingFace‑Modelle (z. B. Mistral‑7B‑Instruct) für kontextuelle, mehrsprachige Antworten.  
+         - Pädagogisches Design: Recasting, Scaffolding und positive Verstärkung eingebettet in natürliche Dialoge.  
+         - Interaktive UI: Streamlit‑Frontend mit Chat‑Interface und Verlauf.  
+         - Lokale Persistenz: ChromaDB für Embeddings und schnelle semantische Suche.  
+         - Produktionsorientiert: klare Trennung von RAG, LLM‑Calls und UI; einfache Containerisierung möglich.
+         
+---
 
-The system is explicitly designed around **proven pedagogical techniques**:
-
-1. **Pedagogical Recasting**: Subtle error correction embedded in natural responses to preserve conversational flow and learner confidence.
-2. **Scaffolding**: Progressive hints and supportive prompts that build learner independence step-by-step.
-3. **Positive Reinforcement**: Consistent celebration of effort and progress to maintain motivation.
-4. **Contextual Learning**: Real-world English examples from movies, literature, and authentic conversations.
-
-## Tech Stack
-
-- **Frontend**: Streamlit 1.53.1 (interactive web UI)
-- **LLM Provider**: HuggingFace Inference API (free tier)
-- **LLM Model**: Mistral-7B-Instruct-v0.2 (lightweight, multilingual)
-- **Framework**: LangChain 0.1.20 (orchestration)
-- **Embeddings**: Sentence-Transformers 3.0.1 (semantic understanding)
-- **Vector Database**: ChromaDB 0.4.24 (local persistence)
-- **Runtime**: Python 3.9+
-
-## Architecture Diagram
-
-```
-┌─────────────────┐
-│  User Input     │
-│  (Streamlit UI) │
-└────────┬────────┘
-         │
-         ▼
-┌──────────────────┐
-│  ChromaDB Search │
-│  (Semantic RAG)  │
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────────────┐
-│ HuggingFace LLM Context  │
-│ (Mistral-7B-Instruct)    │
-└────────┬─────────────────┘
-         │
-         ▼
-┌─────────────────────────────┐
-│ Pedagogical Response        │
-│ (Recasting + Scaffolding)   │
-└─────────────────────────────┘
-```
-
-## Project Structure
+## Projektstruktur (empfohlen)
 
 ```
 Teacher_Isa/
-├── .env                  # Aqui vai o seu GROQ_API_KEY
+├── .env
 ├── requirements.txt
 ├── src/
-│   ├── __init__.py       # Arquivo vazio
 │   ├── api/
-│   │   ├── __init__.py
-│   │   └── main.py       # (Novo) Servidor FastAPI
+│   │   └── main.py         # FastAPI Server (optional)
 │   ├── core/
-│   │   ├── __init__.py
-│   │   ├── llm.py        # Adaptado para o Groq
-│   │   └── rag.py        # Seu código do ChromaDB
+│   │   ├── llm.py          # LLM‑Adapter
+│   │   └── rag.py          # ChromaDB Integration
 │   └── web/
-│       ├── __init__.py
-│       └── app.py        # Seu streamlit_app.py adaptado
+│       └── app.py          # Streamlit App
+├── data/
+│   └── knowledge_base/     # PDFs, Referenzen (nicht versioniert)
+├── docs/
+│   └── examples/
+└── README.md
 ```
 
-## Getting Started
+---
 
-### 1. Clone and Setup
-```bash
-git clone <repository-url>
-cd lucia-bot
-```
+## Schnellstart (lokal)
 
-### 2. Get HuggingFace API Token
-1. Sign up at [https://huggingface.co](https://huggingface.co)
-2. Go to [https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
-3. Create a new token with "read" permission
+1. **Klonen**
 
-### 3. Configure Secrets
-Create `.streamlit/secrets.toml`:
+         git clone <repository-url>
+         cd Teacher_Isa
+
+
+2. **Secrets konfigurieren**
+- Erstelle `.streamlit/secrets.toml` oder `.env` mit:
 ```toml
 HUGGINGFACEHUB_API_TOKEN = "your_token_here"
 ```
+**Wichtig:** Secrets niemals in Git committen.
 
-**Important**: Never commit `.streamlit/secrets.toml` to git!
-
-### 4. Install Dependencies
+3. **Virtuelle Umgebung & Abhängigkeiten**
 ```bash
+python -m venv .venv
+source .venv/bin/activate   # macOS / Linux
+.venv\Scripts\activate      # Windows
 pip install -r requirements.txt
 ```
 
-### 5. Run the App
+4. **App starten**
 ```bash
-streamlit run app/streamlit_app.py
+streamlit run src/web/app.py
 ```
+Die App läuft standardmäßig unter `http://localhost:8501`.
 
-The app will open at `http://localhost:8501`
+---
 
-## Features
+## Outputs & Artefakte
 
-✅ **Interactive Chat Interface**
-- Real-time conversation with Teacher Isa
-- Message history preservation
-- Responsive Streamlit UI
+         - Interaktive Chat‑UI (Streamlit)  
+         - RAG‑Index (ChromaDB‑Ordner mit Embeddings)  
+         - Logs: LLM‑Calls, RAG‑Treffer, Session‑History  
+         - Optional: Exportierte Reports / Übungsprotokolle
 
-✅ **RAG-Powered Responses**
-- Semantic search through grammar references
-- Context-aware corrections and explanations
-- Invisible logging of document usage
+---
 
-✅ **Pedagogical Intelligence**
-- Automatic recasting of errors
-- Scaffolded learning progression
-- Encouraging, supportive tone
+## Hinweise & Best Practices
 
-✅ **Open Source**
-- No API quotas or paywall
-- Free HuggingFace Inference API
-- Local-first ChromaDB storage
+         - Datenquellen: Lade Lehrmaterialien (PDFs, Texte) lokal in `data/knowledge_base/` und indexiere sie mit ChromaDB.  
+         - API‑Limits: Achte auf HuggingFace‑Token‑Limits; setze sinnvolle Fallbacks für LLM‑Ausfälle.  
+         - Pädagogik: Recasting und Scaffolding sind bewusst subtil; teste mit echten Lernenden.  
+         - Sicherheit: Keine sensiblen Daten in Trainings‑ oder Indexdateien; Secrets über Umgebungsvariablen verwalten.
 
-## Roadmap (Phase 2+)
+---
 
-- [ ] **Phase 2**: Load grammar reference PDFs into ChromaDB
-  - Parse English grammar textbooks
-  - Embed and index grammar rules
-  - Test semantic search accuracy
+## Roadmap
 
-- [ ] **Phase 3**: Performance Optimization
-  - Benchmark LLM response times
-  - Optimize RAG relevance
-  - Fine-tune temperature and sampling
+         - Phase 2: Knowledge base mit Grammatik‑PDFs füllen und RAG‑Relevanz optimieren.  
+         - Phase 3: Performance‑Tuning (Antwortlatenz, Embedding‑Cache).  
+         - Phase 4: Erweiterte Features — Speech‑to‑Text, Schreibbewertung, Lernpfade.  
+         - Phase 5: Produktion — Docker, Auth, persistente DB für Konversationen.
+---
 
-- [ ] **Phase 4**: Advanced Features
-  - Speech-to-text input (pronunciation)
-  - Writing evaluation and scoring
-  - Personalized learning paths
-  - Progress tracking and analytics
+## Mitwirken
 
-- [ ] **Phase 5**: Production Deployment
-  - Docker containerization
-  - Cloud deployment (Streamlit Cloud, Google Cloud, etc.)
-  - Authentication and user management
-  - Database for conversation history
+- Forken, Feature‑Branch `feature/<name>` erstellen und PR gegen `main` öffnen.  
+- Issues für Bugs oder Feature‑Wünsche anlegen.  
+- Bitte Tests für Kernfunktionen (RAG, LLM‑Adapter) beifügen.
 
-## Environment Variables
+---
 
-```
-HUGGINGFACEHUB_API_TOKEN     # HuggingFace API token (required)
-```
+## Kontakt
 
-## Development Notes
+**Jeorge Silva** — AI Engineer  
+GitHub: `github.com/jeorgesilva`
 
-### Logging
-- Backend operations logged to console
-- RAG searches logged invisibly (visible in sidebar)
-- LLM calls tracked for debugging
+---
 
-### Error Handling
-- Graceful fallback if RAG documents not found
-- Clear error messages for API token issues
-- Session recovery on LLM timeouts
+## Lizenz
 
-### Performance
-- ChromaDB stores locally (no external API calls)
-- Sentence-Transformers embeddings cached
-- Message history kept in session memory
+MIT License — Nutzung für Bildung und kommerzielle Zwecke erlaubt.
 
-## Contributing
-
-This is a portfolio project demonstrating:
-- RAG architecture implementation
-- LangChain orchestration
-- Streamlit application design
-- Pedagogical AI system design
-- Production-ready Python code patterns
-
-Feel free to fork, modify, and deploy!
-
-## License
-
-MIT License - Educational and commercial use permitted
+---
 
 ## Status
 
-🚀 **Phase 1 Complete**: Core architecture with HuggingFace Inference API
-- ✅ Streamlit UI implemented
-- ✅ HuggingFace LLM integration complete
-- ✅ ChromaDB RAG system ready
-- ✅ Pedagogical prompts configured
-
-⏳ **Phase 2 Pending**: Knowledge base population with grammar references
-- ⏳ Add English grammar PDFs
-- ⏳ Parse and embed documents
-- ⏳ Test semantic search
-
+🚀 **Phase 1 abgeschlossen** — Kernarchitektur implementiert: Streamlit UI, HuggingFace‑Integration, ChromaDB RAG.  
+⏳ **Phase 2 ausstehend** — Knowledge base mit Grammatikreferenzen befüllen und Relevanztests durchführen.
